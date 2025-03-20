@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Тойға тапсырыс</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #f0f2f5, #dbeafe);
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+    }
+    .form-container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      max-width: 600px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+    .form-container h1 {
+      text-align: center;
+      color: #333;
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      font-weight: bold;
+      color: #444;
+      display: block;
+      margin-bottom: 5px;
+    }
+    select, input[type="text"], input[type="number"], input[type="date"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      font-size: 16px;
+    }
+    input[type="radio"],
+    input[type="checkbox"] {
+      margin-right: 5px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 5px;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .payment-button {
+      background: linear-gradient(45deg, #34d399, #10b981);
+      color: white;
+      margin: 0 auto;
+      display: block;
+      max-width: 300px;
+    }
+    .whatsapp-contact {
+      text-align: center;
+      margin-top: 15px;
+    }
+    .whatsapp-contact a {
+      display: inline-block;
+      padding: 10px 15px;
+      background: #25D366;
+      color: white;
+      border-radius: 5px;
+      text-decoration: none;
+      font-size: 16px;
+    }
+    /* Dynamic blocks */
+    #restaurantChoiceContainer,
+    #presetPeopleContainer,
+    #yandexMapContainer,
+    #nearbyRestaurantsBtn {
+      display: none;
+    }
+    /* Personnel photos block */
+    #personnelPhotos {
+      display: none;
+      margin-top: 10px;
+      text-align: center;
+    }
+    #personnelPhotos img {
+      width: 30%;
+      margin: 0 5px;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+    /* People count container */
+    #manualPeopleContainer {
+      display: block;
+    }
+    /* Yandex Map styles */
+    #yandexMapContainer #map {
+      width: 100%;
+      height: 200px;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+  </style>
+  <!-- Yandex Maps API -->
+  <script src="https://api-maps.yandex.ru/2.1/?apikey=8a3e4da0-9ef2-4176-9203-e7014c1dba6f&lang=kk_KZ" type="text/javascript"></script>
+  <!-- Telegram WebApp API -->
+  <script src="https://telegram.org/js/telegram-webapp.js"></script>
+</head>
+<body>
+  <div class="form-container">
+    <h1>Тойға тапсырыс</h1>
+    <form id="orderForm">
+      <!-- Celebration Type -->
+      <div class="form-group">
+        <label for="celebrationType">Тойдың түрі:</label>
+        <select id="celebrationType" name="celebrationType" required>
+          <option value="">Таңдаңыз</option>
+          <option value="ас_беру">Ас беру</option>
+          <option value="той_жасау">Той жасау</option>
+        </select>
+      </div>
+      <!-- City (fixed to Алматы) -->
+      <div class="form-group">
+        <label>Қала:</label>
+        <select disabled>
+          <option>Алматы</option>
+        </select>
+      </div>
+      <!-- District -->
+      <div class="form-group">
+        <label for="district">Аудан / Микрорайон:</label>
+        <select id="district" name="district" required>
+          <option value="">Таңдаңыз</option>
+          <option value="Бостандық">Бостандық</option>
+          <option value="Медеу">Медеу</option>
+          <option value="Әуезов">Әуезов</option>
+          <option value="Алатау">Алатау</option>
+        </select>
+      </div>
+      <!-- Restaurant Choice for Бостандық district -->
+      <div id="restaurantChoiceContainer" class="form-group">
+        <label>Мейрамхана таңдаңыз:</label>
+        <label><input type="radio" name="restaurantChoice" value="Достар"> Достар</label>
+        <label><input type="radio" name="restaurantChoice" value="Басқа"> Басқа</label>
+      </div>
+      <!-- Yandex Map block (for Достар) -->
+      <div id="yandexMapContainer" class="form-group">
+        <label>Достар мейрамханасының картасы:</label>
+        <div id="map"></div>
+      </div>
+      <!-- Nearby Restaurant button (if needed) -->
+      <button type="button" id="nearbyRestaurantsBtn">Жақын жердегі ресторан</button>
+      <!-- Meal Selection -->
+      <div class="form-group">
+        <label for="mealSelection">Ас мәзірі (теңге):</label>
+        <select id="mealSelection" name="mealSelection"></select>
+      </div>
+      <!-- People Count: Preset (for Достар) -->
+      <div id="presetPeopleContainer" class="form-group">
+        <label>Адам саны (Достар үшін):</label>
+        <label><input type="radio" name="peopleCountPreset" value="70"> 70</label>
+        <label><input type="radio" name="peopleCountPreset" value="200"> 200</label>
+      </div>
+      <!-- People Count: Manual (for Басқа or other districts) -->
+      <div id="manualPeopleContainer" class="form-group">
+        <label for="peopleCount">Адам саны:</label>
+        <input type="number" id="peopleCount" name="peopleCount" placeholder="Сан енгізіңіз" required>
+      </div>
+      <!-- Personnel Information -->
+      <div class="form-group">
+        <p style="font-size:16px; font-weight:bold; color:#e3342f; text-align:center;">
+          Біздің әншілеріміз – атақты және Қазақстанның эстрада жұлдыздары!
+        </p>
+        <label>Персоналды таңдаңыз!</label>
+        <div>
+          <label><input type="checkbox" name="personnel" value="асаба"> Асаба</label>
+          <label><input type="checkbox" name="personnel" value="әнші"> Әнші</label>
+          <label><input type="checkbox" name="personnel" value="биші"> Биші</label>
+        </div>
+        <!-- Personnel Photos -->
+        <div id="personnelPhotos">
+          <img src="./photo/tri.png" alt="Три фото">
+          <img src="./photo/asaba.png" alt="Асаба фото">
+          <img src="./photo/abai.png" alt="Абай фото">
+        </div>
+      </div>
+      <!-- Event Date -->
+      <div class="form-group">
+        <label for="eventDate">Той өтетін күн:</label>
+        <input type="date" id="eventDate" name="eventDate" required>
+      </div>
+      <!-- Submit Button -->
+      <button type="submit">Тапсырыс жіберу</button>
+    </form>
+  </div>
+  <!-- Payment Button -->
+  <div id="reserveMessage" style="display: none;">
+    <button class="payment-button" onclick="window.open('https://pay.kaspi.kz/pay/cvyrauxx', '_blank')">
+      Kaspi арқылы төлеу
+    </button>
+    <div class="whatsapp-contact">
+      <p>Сұрақтар бойынша WhatsApp менеджерімізге жазыңыз:</p>
+      <a href="https://wa.me/77001112233" target="_blank">WhatsApp-қа жазу</a>
+    </div>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // Инициализация Telegram WebApp
+      if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.ready();
+        console.log("Telegram.WebApp.ready() вызван");
+        if (Telegram.WebApp.expand) {
+          Telegram.WebApp.expand();
+        }
+        console.log("Telegram.WebApp.initDataUnsafe:", Telegram.WebApp.initDataUnsafe);
+        console.log("Telegram.WebApp.initData:", Telegram.WebApp.initData);
+      }
+      
+      // Получение Telegram user_id через WebApp API, если доступно.
+      // Если API недоступно (например, при тестировании вне Telegram), пытаемся извлечь его из URL-параметров.
+      let telegramUserId = null;
+      if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe) {
+        const user = Telegram.WebApp.initDataUnsafe.user;
+        console.log("Полученный объект пользователя:", user);
+        if (user && user.id) {
+          telegramUserId = user.id;
+          console.log("Telegram User ID (WebApp):", telegramUserId);
+        }
+      }
+      if (!telegramUserId) {
+        const params = new URLSearchParams(window.location.search);
+        const queryUserId = params.get('user_id');
+        if (queryUserId) {
+          telegramUserId = queryUserId;
+          console.log("Telegram User ID (URL):", telegramUserId);
+        } else {
+          console.warn("Telegram User ID не найден. Запустите приложение через Telegram или укажите user_id в URL.");
+        }
+      }
+      
+      // Заполнение селектора ассортимента блюд
+      const mealSelect = document.getElementById('mealSelection');
+      for (let price = 10000; price <= 45000; price += 2000) {
+        const option = document.createElement('option');
+        option.value = price;
+        option.textContent = price + " теңге";
+        mealSelect.appendChild(option);
+      }
+      
+      const districtSelect = document.getElementById('district');
+      const restaurantChoiceContainer = document.getElementById('restaurantChoiceContainer');
+      const nearbyRestaurantsBtn = document.getElementById('nearbyRestaurantsBtn');
+      const presetPeopleContainer = document.getElementById('presetPeopleContainer');
+      const manualPeopleContainer = document.getElementById('manualPeopleContainer');
+      const yandexMapContainer = document.getElementById('yandexMapContainer');
+      const peopleCountInput = document.getElementById('peopleCount');
+      
+      let mapInitialized = false;
+      function initYandexMap() {
+        if (mapInitialized) return;
+        ymaps.ready(function(){
+          var myMap = new ymaps.Map("map", {
+              center: [43.155766, 76.895483],
+              zoom: 17,
+              controls: ['fullscreenControl']
+          });
+          var placemark = new ymaps.Placemark([43.155766, 76.895483], {
+            hintContent: 'Достар мейрамханасы',
+            balloonContent: 'Достар мейрамханасы'
+          });
+          myMap.geoObjects.add(placemark);
+        });
+        mapInitialized = true;
+      }
+      
+      districtSelect.addEventListener('change', function() {
+        if (this.value === 'Бостандық') {
+          restaurantChoiceContainer.style.display = 'block';
+          nearbyRestaurantsBtn.style.display = 'none';
+        } else {
+          restaurantChoiceContainer.style.display = 'none';
+          presetPeopleContainer.style.display = 'none';
+          yandexMapContainer.style.display = 'none';
+          nearbyRestaurantsBtn.style.display = 'block';
+          manualPeopleContainer.style.display = 'block';
+          peopleCountInput.disabled = false;
+        }
+      });
+      
+      const restaurantChoiceRadios = document.querySelectorAll('input[name="restaurantChoice"]');
+      restaurantChoiceRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+          if (this.value === 'Достар') {
+            presetPeopleContainer.style.display = 'block';
+            yandexMapContainer.style.display = 'block';
+            manualPeopleContainer.style.display = 'none';
+            initYandexMap();
+            nearbyRestaurantsBtn.style.display = 'none';
+            peopleCountInput.disabled = true;
+          } else if (this.value === 'Басқа') {
+            presetPeopleContainer.style.display = 'none';
+            yandexMapContainer.style.display = 'none';
+            manualPeopleContainer.style.display = 'block';
+            nearbyRestaurantsBtn.style.display = 'none';
+            peopleCountInput.disabled = false;
+          }
+        });
+      });
+      
+      const personnelCheckboxes = document.querySelectorAll('input[name="personnel"]');
+      const personnelPhotos = document.getElementById('personnelPhotos');
+      personnelCheckboxes.forEach(cb => {
+        cb.addEventListener('change', function() {
+          const anyChecked = Array.from(personnelCheckboxes).some(chk => chk.checked);
+          personnelPhotos.style.display = anyChecked ? 'block' : 'none';
+        });
+      });
+      
+      document.getElementById('orderForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        if (!telegramUserId) {
+          alert("Telegram User ID анықталмады. Өтініш, Telegram арқылы кіріңіз или укажите user_id в URL.");
+          return;
+        }
+        let restaurant = '';
+        let peopleCount = '';
+        if (districtSelect.value === 'Бостандық') {
+          const selectedRestaurant = document.querySelector('input[name="restaurantChoice"]:checked');
+          if (!selectedRestaurant) {
+            alert("Мейрамхана таңдауын белгілеңіз!");
+            return;
+          }
+          if (selectedRestaurant.value === 'Достар') {
+            restaurant = 'Достар';
+            const preset = document.querySelector('input[name="peopleCountPreset"]:checked');
+            if (!preset) {
+              alert("Достар үшін адам санын таңдаңыз!");
+              return;
+            }
+            peopleCount = preset.value;
+          } else {
+            restaurant = 'Жақын жердегі ресторан';
+            peopleCount = peopleCountInput.value;
+            if (!peopleCount || isNaN(peopleCount)) {
+              alert("Адам саны сан түрінде енгізілуі тиіс!");
+              return;
+            }
+          }
+        } else {
+          restaurant = 'Басқа аудан (мейрамхана таңдалмаған)';
+          peopleCount = peopleCountInput.value;
+          if (!peopleCount || isNaN(peopleCount)) {
+            alert("Адам саны сан түрінде енгізілуі тиіс!");
+            return;
+          }
+        }
+        const personnelChecked = Array.from(document.querySelectorAll('input[name="personnel"]:checked'))
+                                      .map(el => el.value);
+        const formData = {
+          celebrationType: document.getElementById('celebrationType').value,
+          district: districtSelect.value,
+          restaurant: restaurant,
+          mealSelection: document.getElementById('mealSelection').value,
+          peopleCount: peopleCount,
+          eventDate: document.getElementById('eventDate').value,
+          personnel: personnelChecked
+        };
+        try {
+          const response = await fetch("https://8b72076d3be444459b643bdc8c1f5915.serveo.net/submit/" + telegramUserId, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData)
+          });
+          if (!response.ok) {
+            alert("Қате кетті! Сервер жауабы: " + response.statusText);
+            return;
+          }
+          document.getElementById('reserveMessage').style.display = 'block';
+        } catch (error) {
+          alert("Сұраныс жіберу қатесі: " + error.message);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
